@@ -13,12 +13,12 @@ export class TasksController {
         return this.tasksService.listTasks(currentUser.id);
     }
 
-    @Get('/:id')
+    @Get(':id')
      getTask(@Param('id') id: string, @CurrentUser() currentUser: JwtPayload) {
         return this.tasksService.getTask(id, currentUser.id);
     }
 
-    @Patch('/edit-task/:id') 
+    @Patch(':id') 
     editTask(
         @Param('id') taskId: string,
         @Body() updateTaskDto: UpdateTaskDto,
