@@ -5,9 +5,12 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { jwtConstants } from './constants';
-import { IS_PUBLIC_KEY } from './is-public.decorator';
+
 import { JwtService } from '@nestjs/jwt';
+
 import { Reflector } from '@nestjs/core';
+import { Request } from 'express';
+import { IS_PUBLIC_KEY } from './decorators/is-public.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -26,8 +29,9 @@ export class AuthGuard implements CanActivate {
             return true;
         }
 
-        const request = context.switchToHttp().getRequest();
+        const request = context.switchToHttp().getRequest<Request>();
         const token = this.extractTokenFromHeader(request);
+        
         if (!token) {
             throw new UnauthorizedException();
         }
