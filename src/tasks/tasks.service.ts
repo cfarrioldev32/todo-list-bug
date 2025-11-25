@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Task } from '../entities/task.entity';
 import { Repository } from 'typeorm';
+import { UpdateTaskDto } from './dto/update-task.dto';
 
 @Injectable()
 export class TasksService {
@@ -29,15 +30,21 @@ export class TasksService {
             }
         },
         );
-        //TODO: Implement logs
+        
+        if(!task) {
+           throw new NotFoundException('Task not found');
+        }
         return task;
     }
 
-    async editTask(body: any, userId: string) {
-        await this.tasksRepository.update(body.id, body);
+    async editTask(taskId: string, updateTaskDto: UpdateTaskDto, userId: string) {
+        const task = await this.getTask(taskId, userId);
 
-        const editedTask = await this.getTask(body.id, userId);
+        Object.assign(task, updateTaskDto);
 
+        const editedTask = await this.tasksRepository.save(task);
+
+        //TODO: Implement logs
         return editedTask;
-    }
+     }
 }
