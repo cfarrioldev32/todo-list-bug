@@ -2,11 +2,12 @@ import {
     CanActivate,
     ExecutionContext,
     Injectable,
+    Logger,
     UnauthorizedException,
 } from '@nestjs/common';
 import { jwtConstants } from './constants';
 
-import { JwtService } from '@nestjs/jwt';
+import { JsonWebTokenError, JwtService, TokenExpiredError } from '@nestjs/jwt';
 
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
@@ -14,6 +15,7 @@ import { IS_PUBLIC_KEY } from './decorators/is-public.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+    private readonly logger = new Logger(AuthGuard.name);
     constructor(
         private jwtService: JwtService,
         private reflector: Reflector,
@@ -25,7 +27,6 @@ export class AuthGuard implements CanActivate {
             [context.getHandler(), context.getClass()],
         );
         if (isPublic) {
-            // 💡 See this condition
             return true;
         }
 
@@ -33,17 +34,25 @@ export class AuthGuard implements CanActivate {
         const token = this.extractTokenFromHeader(request);
         
         if (!token) {
-            throw new UnauthorizedException();
+            this.logger.warn('Missing Baerer token');
+            throw new UnauthorizedException('Missing Baerer token');
         }
         try {
             const payload = await this.jwtService.verifyAsync(token, {
                 secret: jwtConstants.secret,
             });
-            // 💡 We're assigning the payload to the request object here
-            // so that we can access it in our route handlers
             request['user'] = payload;
-        } catch {
-            throw new UnauthorizedException();
+        } catch (e) {
+              if (e instanceof TokenExpiredError) {
+                this.logger.warn('Expired JWT token');
+                throw new UnauthorizedException('Token expired');
+            } else if (e instanceof JsonWebTokenError) {
+                this.logger.warn('Invalid JWT token');
+                throw new UnauthorizedException('Invalid Token');
+            } else {
+                this.logger.error('Unexpected JWT error', e);
+                throw new UnauthorizedException('Unexpected error');
+  }
         }
         return true;
     }

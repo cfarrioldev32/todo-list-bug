@@ -7,6 +7,8 @@ import { CreateTaskDto } from './dto/create-task.dto';
 
 @Injectable()
 export class TasksService {
+    private readonly logger = new Logger(TasksService.name);
+
     constructor(
         @InjectRepository(Task)
         private readonly tasksRepository: Repository<Task>,
@@ -16,7 +18,6 @@ export class TasksService {
         const tasks = await this.tasksRepository.find({
             where: {owner: {id: userId}}
         });
-        //TODO: Implement logs
         return tasks;
     }
 
@@ -33,7 +34,8 @@ export class TasksService {
         );
         
         if(!task) {
-           throw new NotFoundException('Task not found');
+            this.logger.warn(`Task ${taskId} not found`);
+            throw new NotFoundException('Task not found');
         }
         return task;
     }
@@ -51,12 +53,14 @@ export class TasksService {
 
     async editTask(taskId: string, updateTaskDto: UpdateTaskDto, userId: string) {
         const task = await this.getTask(taskId, userId);
-
+        if (!task) {
+        this.logger.warn(`Task ${taskId} not found for edit`);
+        throw new NotFoundException('Task not found');
+        }
         Object.assign(task, updateTaskDto);
 
         const editedTask = await this.tasksRepository.save(task);
-
-        //TODO: Implement logs
+        
         return editedTask;
      }
 }
