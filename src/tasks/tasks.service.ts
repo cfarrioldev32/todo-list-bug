@@ -53,10 +53,6 @@ export class TasksService {
 
     async editTask(taskId: string, updateTaskDto: UpdateTaskDto, userId: string) {
         const task = await this.getTask(taskId, userId);
-        if (!task) {
-        this.logger.warn(`Task ${taskId} not found for edit`);
-        throw new NotFoundException('Task not found');
-        }
         Object.assign(task, updateTaskDto);
 
         const editedTask = await this.tasksRepository.save(task);
